@@ -1,0 +1,78 @@
+#!/bin/bash
+
+len=$#
+
+info="./svelte-prep <npm or pnpm> <project_name>"
+postcss="export default { 
+	 plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    }
+};
+"
+
+tailwindcss='export default {\n
+\tcontent: ["./src/**/*.{html,js,svelte,ts}"],\n
+\ttheme: {\n
+\t\textend: {},\n
+\t},\n
+\tplugins: [require("daisyui"), require("@tailwindcss/typography")],\n
+\tdaisyui: {\n
+\t\tthemes: ["light", "dark", "cupcake", "dracula", "cmyk", "autumn"],\n
+\t},\n
+}\n
+'
+css='@import url("https://fonts.googleapis.com/css2?family=Montserrat&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+'
+
+layout='<script>\n
+\timport "./styles.css";\n
+</script>\n
+\n
+\n
+<div class="app flex flex-col h-screen">\n
+\t<main class="flex-grow">\n
+\t\t<slot />\n
+\t</main>\n
+</div>
+'
+
+if [ $len == 0 ]; then
+echo $info
+exit
+elif [ $len == 1 ]; then
+	if [ "$1" == "npm" ] || [ "$1" == "pnpm" ]; then
+		echo $info
+		exit;
+	else
+		p_manager="npm"
+		project_name=$1
+	fi
+elif [ $len == 2 ]; then
+	if [ "$1" != "npm" ] && [ "$1" != "pnpm" ]; then
+		echo $info
+		exit
+	else
+		p_manager=$1
+		project_name=$2
+	fi
+fi
+
+echo "$p_manager with $project_name"
+
+$p_manager create svelte@latest $project_name && cd $2
+$p_manager install
+$p_manager install -D tailwindcss postcss autoprefixer daisyui @tailwindcss/typography
+npx tailwindcss init -p
+
+echo -e $tailwindcss > "tailwind.config.js"
+
+cd src
+cd routes
+echo -e $css > "styles.css"
+echo -e $layout > "+layout.svelte"
+npx prettier . --write
+
